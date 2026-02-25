@@ -1,6 +1,6 @@
 # egctl
 
-CLI tool for configuring the Endgame Gear OP1 8k v2 mouse on Linux. No official Linux configuration software exists — this tool communicates directly over USB HID to read and write all mouse settings.
+Configure the Endgame Gear OP1 8k v2 mouse on Linux via USB HID.
 
 ## Features
 
