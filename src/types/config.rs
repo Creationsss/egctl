@@ -252,7 +252,7 @@ impl fmt::Display for MouseConfig {
 }
 
 pub fn validate_dpi(dpi: u16) -> Result<u16> {
-	if dpi < CPI_MIN || dpi > CPI_MAX {
+	if !(CPI_MIN..=CPI_MAX).contains(&dpi) {
 		bail!("invalid DPI value {dpi}. must be {CPI_MIN}-{CPI_MAX} in steps of {CPI_STEP}");
 	}
 	Ok(((dpi as u32 + CPI_STEP as u32 / 2) / CPI_STEP as u32 * CPI_STEP as u32) as u16)

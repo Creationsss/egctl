@@ -79,7 +79,7 @@ fn cmd_info() -> Result<()> {
 }
 
 fn cmd_dpi(value: Option<u16>, level: u8, x_dpi: Option<u16>, y_dpi: Option<u16>) -> Result<()> {
-	if level < 1 || level > 4 {
+	if !(1..=4).contains(&level) {
 		bail!("invalid DPI level {level}. must be 1-4");
 	}
 	let idx = (level - 1) as usize;
@@ -123,7 +123,7 @@ fn cmd_dpi(value: Option<u16>, level: u8, x_dpi: Option<u16>, y_dpi: Option<u16>
 }
 
 fn cmd_dpi_levels(count: u8) -> Result<()> {
-	if count < 1 || count > 4 {
+	if !(1..=4).contains(&count) {
 		bail!("invalid DPI level count {count}. must be 1-4");
 	}
 	modify(|c| c.cpi_levels = count)?;
@@ -199,7 +199,7 @@ fn cmd_bind(button: u8, action: BindAction) -> Result<()> {
 		BindAction::Key { code } => MappingType::Keyboard(code),
 		BindAction::CpiLoop => MappingType::CpiLoop,
 		BindAction::Cpi { level } => {
-			if level < 1 || level > 4 {
+			if !(1..=4).contains(&level) {
 				bail!("invalid CPI level {level}. must be 1-4");
 			}
 			MappingType::Cpi(level - 1)
