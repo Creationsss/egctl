@@ -1,0 +1,14 @@
+[package]
+name = "egctl"
+version = "0.1.0"
+edition = "2021"
+description = "CLI tool for configuring the Endgame Gear OP1 8k v2 mouse on Linux"
+license = "AGPL-3.0-or-later"
+repository = "https://heliopolis.live/creations/egctl"
+keywords = ["mouse", "hid", "endgame-gear", "op1"]
+categories = ["command-line-utilities", "hardware-support"]
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+hidapi = { version = "2", default-features = false, features = ["linux-static-hidraw"] }
