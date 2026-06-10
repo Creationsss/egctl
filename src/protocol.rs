@@ -28,7 +28,7 @@ pub const OFF_CPIS: usize = 51;
 pub const OFF_BUTTONS: usize = 77;
 
 pub const CPI_STRUCT_SIZE: usize = 5;
-pub const BUTTON_STRUCT_SIZE: usize = 3;
+pub const BUTTON_STRUCT_SIZE: usize = 7;
 
 pub const CPI_MIN: u16 = 50;
 pub const CPI_MAX: u16 = 26000;
@@ -86,6 +86,6 @@ mod tests {
 	fn button_offsets_fit_in_config() {
 		let end = OFF_BUTTONS + BUTTON_COUNT * BUTTON_STRUCT_SIZE;
 		assert!(end <= CONFIG_SIZE);
-		assert_eq!(end, 98);
+		assert_eq!(end, 126);
 	}
 }

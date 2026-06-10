@@ -291,27 +291,21 @@ mod tests {
 		buf[OFF_CPIS + 7] = 0x01;
 		buf[OFF_CPIS + 8] = 0x40;
 		buf[OFF_CPIS + 9] = 0x06;
-		buf[OFF_BUTTONS] = 8;
-		buf[OFF_BUTTONS + 1] = MAP_MOUSE as u8;
-		buf[OFF_BUTTONS + 2] = MOUSE_LEFT;
-		buf[OFF_BUTTONS + 3] = SPDT_SPEED;
-		buf[OFF_BUTTONS + 4] = MAP_MOUSE as u8;
-		buf[OFF_BUTTONS + 5] = MOUSE_RIGHT;
-		buf[OFF_BUTTONS + 6] = 0;
-		buf[OFF_BUTTONS + 7] = MAP_MOUSE as u8;
-		buf[OFF_BUTTONS + 8] = MOUSE_MIDDLE;
-		buf[OFF_BUTTONS + 9] = 0;
-		buf[OFF_BUTTONS + 10] = MAP_MOUSE as u8;
-		buf[OFF_BUTTONS + 11] = MOUSE_FORWARD;
-		buf[OFF_BUTTONS + 12] = 0;
-		buf[OFF_BUTTONS + 13] = MAP_MOUSE as u8;
-		buf[OFF_BUTTONS + 14] = MOUSE_BACK;
-		buf[OFF_BUTTONS + 15] = 0;
-		buf[OFF_BUTTONS + 16] = MAP_CPI_LOOP as u8;
-		buf[OFF_BUTTONS + 17] = 0;
-		buf[OFF_BUTTONS + 18] = 0;
-		buf[OFF_BUTTONS + 19] = MAP_DISABLE as u8;
-		buf[OFF_BUTTONS + 20] = 0;
+		let buttons: [(u8, u8, u8); BUTTON_COUNT] = [
+			(8, MAP_MOUSE as u8, MOUSE_LEFT),
+			(SPDT_SPEED, MAP_MOUSE as u8, MOUSE_RIGHT),
+			(0, MAP_MOUSE as u8, MOUSE_MIDDLE),
+			(0, MAP_MOUSE as u8, MOUSE_FORWARD),
+			(0, MAP_MOUSE as u8, MOUSE_BACK),
+			(0, MAP_CPI_LOOP as u8, 0),
+			(0, MAP_DISABLE as u8, 0),
+		];
+		for (i, (spdt, ty, val)) in buttons.iter().enumerate() {
+			let base = OFF_BUTTONS + i * BUTTON_STRUCT_SIZE;
+			buf[base] = *spdt;
+			buf[base + 1] = *ty;
+			buf[base + 2] = *val;
+		}
 		buf
 	}
 
@@ -378,7 +372,7 @@ mod tests {
 		let mut buf = make_test_buf();
 		buf[5] = 0xAB;
 		buf[35] = 0xCD;
-		buf[100] = 0xEF;
+		buf[200] = 0xEF;
 
 		let mut config = MouseConfig::from_bytes(&buf);
 		config.polling_rate = PollingRate::Hz4000;
@@ -387,7 +381,7 @@ mod tests {
 		let out = config.to_bytes();
 		assert_eq!(out[5], 0xAB);
 		assert_eq!(out[35], 0xCD);
-		assert_eq!(out[100], 0xEF);
+		assert_eq!(out[200], 0xEF);
 		assert_eq!(out[OFF_POLLING_DIVIDER], 2);
 		assert_eq!(out[OFF_LOD], 2);
 	}

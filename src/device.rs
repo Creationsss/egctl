@@ -29,7 +29,7 @@ impl Device {
 			bail!("device not found (VID:{VID:#06x} PID:{PID:#06x}). is the mouse plugged in?");
 		}
 
-		paths.sort_by(|a, b| b.0.cmp(&a.0));
+		paths.sort_by_key(|p| std::cmp::Reverse(p.0));
 
 		for (_iface, path) in &paths {
 			match api.open_path(path) {
