@@ -1,6 +1,6 @@
 [package]
 name = "egctl"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "CLI tool for configuring the Endgame Gear OP1 8k v2 mouse on Linux"
 license = "AGPL-3.0-or-later"

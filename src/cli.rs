@@ -91,8 +91,8 @@ pub enum BindAction {
 	Key { code: u8 },
 	#[command(about = "Map to CPI level cycling")]
 	CpiLoop,
-	#[command(about = "Map to a specific CPI level (1-4)")]
-	Cpi { level: u8 },
+	#[command(about = "Map to a CPI shift to a specific DPI")]
+	Cpi { dpi: u16 },
 	#[command(about = "Map to a media key")]
 	Media { key: MediaKeyArg },
 	#[command(about = "Disable the button")]

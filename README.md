@@ -40,7 +40,7 @@ Unplug and replug the mouse after installing rules.
 egctl info
 egctl dpi 1600
 egctl dpi 800 --level 2
-egctl dpi --x 800 --y 1600
+egctl dpi -x 800 -y 1600
 egctl dpi-levels 2
 egctl rate 4000
 egctl lod 2

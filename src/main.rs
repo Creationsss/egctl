@@ -70,7 +70,7 @@ fn cmd_info() -> Result<()> {
 	let dev = Device::open()?;
 
 	let (major, minor) = dev.get_firmware_version()?;
-	println!("Firmware: {major:02x}.{minor:02x}");
+	println!("Firmware: {minor:x}.{major:x}");
 	println!();
 
 	let config = dev.read_config()?;
@@ -105,7 +105,7 @@ fn cmd_dpi(value: Option<u16>, level: u8, x_dpi: Option<u16>, y_dpi: Option<u16>
 			}
 			return Ok(());
 		}
-		_ => bail!("conflicting DPI arguments. use VALUE, or --x X --y Y"),
+		_ => bail!("conflicting DPI arguments. use VALUE, or -x X -y Y"),
 	};
 
 	modify(|c| {
@@ -175,6 +175,9 @@ fn cmd_debounce(button: u8, value: u8) -> Result<()> {
 
 fn cmd_spdt(button: u8, mode: SpdtValue) -> Result<()> {
 	let idx = validate_button(button)?;
+	if idx >= 2 {
+		bail!("SPDT is only available on the left and right buttons (1-2)");
+	}
 	let spdt = match mode {
 		SpdtValue::Off => SpdtMode::Off,
 		SpdtValue::Safe => SpdtMode::Safe,
@@ -201,11 +204,13 @@ fn cmd_bind(button: u8, action: BindAction) -> Result<()> {
 		}),
 		BindAction::Key { code } => MappingType::Keyboard(code),
 		BindAction::CpiLoop => MappingType::CpiLoop,
-		BindAction::Cpi { level } => {
-			if !(1..=4).contains(&level) {
-				bail!("invalid CPI level {level}. must be 1-4");
+		BindAction::Cpi { dpi } => {
+			let dpi = validate_dpi(dpi)?;
+			MappingType::Cpi {
+				xy_split: false,
+				x: dpi,
+				y: dpi,
 			}
-			MappingType::Cpi(level - 1)
 		}
 		BindAction::Media { key } => MappingType::Media(match key {
 			MediaKeyArg::PlayPause => MediaKey::PlayPause,

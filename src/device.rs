@@ -31,7 +31,13 @@ impl Device {
 
 		paths.sort_by_key(|p| std::cmp::Reverse(p.0));
 
-		for (_iface, path) in &paths {
+		let have_config_iface = paths.iter().any(|p| p.0 == 1);
+
+		let mut last_err = None;
+		for (iface, path) in &paths {
+			if have_config_iface && *iface < 1 {
+				continue;
+			}
 			match api.open_path(path) {
 				Ok(hid) => return Ok(Self { _api: api, hid }),
 				Err(e) => {
@@ -42,6 +48,7 @@ impl Device {
 					{
 						permission_denied = true;
 					}
+					last_err = Some(msg);
 				}
 			}
 		}
@@ -52,6 +59,10 @@ impl Device {
 				 sudo cp 60-endgamegear.rules /etc/udev/rules.d/\n  \
 				 sudo udevadm control --reload-rules && sudo udevadm trigger"
 			);
+		}
+
+		if let Some(msg) = last_err {
+			bail!("failed to open config interface (VID:{VID:#06x} PID:{PID:#06x}): {msg}");
 		}
 
 		bail!("device not found (VID:{VID:#06x} PID:{PID:#06x}). is the mouse plugged in?")

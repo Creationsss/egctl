@@ -148,7 +148,7 @@ impl MouseConfig {
 		let buttons: [ButtonConfig; BUTTON_COUNT] = std::array::from_fn(|i| {
 			let base = OFF_BUTTONS + i * BUTTON_STRUCT_SIZE;
 			let (spdt, multiclick) = SpdtMode::from_byte(buf[base]);
-			let mapping = MappingType::from_bytes(buf[base + 1] as i8, buf[base + 2]);
+			let mapping = MappingType::from_bytes(buf[base + 1] as i8, &buf[base + 2..base + 7]);
 			ButtonConfig {
 				spdt,
 				multiclick,
@@ -205,9 +205,9 @@ impl MouseConfig {
 		for i in 0..BUTTON_COUNT {
 			let base = OFF_BUTTONS + i * BUTTON_STRUCT_SIZE;
 			buf[base] = self.buttons[i].spdt.to_byte(self.buttons[i].multiclick);
-			let (type_byte, value_byte) = self.buttons[i].mapping.to_bytes();
+			let (type_byte, value_bytes) = self.buttons[i].mapping.to_bytes();
 			buf[base + 1] = type_byte as u8;
-			buf[base + 2] = value_byte;
+			buf[base + 2..base + 7].copy_from_slice(&value_bytes);
 		}
 
 		buf

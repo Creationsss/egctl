@@ -127,40 +127,63 @@ pub enum MappingType {
 	Scroll(ScrollDirection),
 	Keyboard(u8),
 	CpiLoop,
-	Cpi(u8),
+	Cpi { xy_split: bool, x: u16, y: u16 },
 	Media(MediaKey),
 	Disable,
 }
 
 impl MappingType {
-	pub fn from_bytes(type_byte: i8, value_byte: u8) -> Self {
+	pub fn from_bytes(type_byte: i8, value: &[u8]) -> Self {
 		match type_byte {
 			MAP_MOUSE => {
-				let key = MouseKey::from_byte(value_byte).unwrap_or(MouseKey::Left);
+				let key = MouseKey::from_byte(value[0]).unwrap_or(MouseKey::Left);
 				Self::Mouse(key)
 			}
-			MAP_SCROLL => Self::Scroll(ScrollDirection::from_byte(value_byte)),
-			MAP_KEYBOARD => Self::Keyboard(value_byte),
+			MAP_SCROLL => Self::Scroll(ScrollDirection::from_byte(value[0])),
+			MAP_KEYBOARD => Self::Keyboard(value[0]),
 			MAP_CPI_LOOP => Self::CpiLoop,
-			MAP_CPI => Self::Cpi(value_byte),
+			MAP_CPI => Self::Cpi {
+				xy_split: value[0] != 0,
+				x: u16::from_le_bytes([value[1], value[2]]),
+				y: u16::from_le_bytes([value[3], value[4]]),
+			},
 			MAP_MEDIA => {
-				let key = MediaKey::from_byte(value_byte).unwrap_or(MediaKey::PlayPause);
+				let key = MediaKey::from_byte(value[0]).unwrap_or(MediaKey::PlayPause);
 				Self::Media(key)
 			}
 			_ => Self::Disable,
 		}
 	}
 
-	pub fn to_bytes(self) -> (i8, u8) {
-		match self {
-			Self::Mouse(k) => (MAP_MOUSE, k.to_byte()),
-			Self::Scroll(d) => (MAP_SCROLL, d.to_byte()),
-			Self::Keyboard(code) => (MAP_KEYBOARD, code),
-			Self::CpiLoop => (MAP_CPI_LOOP, 0),
-			Self::Cpi(level) => (MAP_CPI, level),
-			Self::Media(k) => (MAP_MEDIA, k.to_byte()),
-			Self::Disable => (MAP_DISABLE, 0),
-		}
+	pub fn to_bytes(self) -> (i8, [u8; 5]) {
+		let mut v = [0u8; 5];
+		let type_byte = match self {
+			Self::Mouse(k) => {
+				v[0] = k.to_byte();
+				MAP_MOUSE
+			}
+			Self::Scroll(d) => {
+				v[0] = d.to_byte();
+				MAP_SCROLL
+			}
+			Self::Keyboard(code) => {
+				v[0] = code;
+				MAP_KEYBOARD
+			}
+			Self::CpiLoop => MAP_CPI_LOOP,
+			Self::Cpi { xy_split, x, y } => {
+				v[0] = xy_split as u8;
+				v[1..3].copy_from_slice(&x.to_le_bytes());
+				v[3..5].copy_from_slice(&y.to_le_bytes());
+				MAP_CPI
+			}
+			Self::Media(k) => {
+				v[0] = k.to_byte();
+				MAP_MEDIA
+			}
+			Self::Disable => MAP_DISABLE,
+		};
+		(type_byte, v)
 	}
 }
 
@@ -172,7 +195,12 @@ impl fmt::Display for MappingType {
 			Self::Scroll(ScrollDirection::Down) => write!(f, "scroll down"),
 			Self::Keyboard(code) => write!(f, "key 0x{code:02X}"),
 			Self::CpiLoop => write!(f, "CPI cycle"),
-			Self::Cpi(level) => write!(f, "CPI level {}", level + 1),
+			Self::Cpi {
+				xy_split: true,
+				x,
+				y,
+			} => write!(f, "CPI shift X={x} Y={y}"),
+			Self::Cpi { x, .. } => write!(f, "CPI shift {x}"),
 			Self::Media(k) => write!(f, "media {}", k.name()),
 			Self::Disable => write!(f, "disabled"),
 		}
@@ -192,14 +220,23 @@ mod tests {
 			MappingType::Scroll(ScrollDirection::Down),
 			MappingType::Keyboard(0x04),
 			MappingType::CpiLoop,
-			MappingType::Cpi(2),
+			MappingType::Cpi {
+				xy_split: false,
+				x: 1600,
+				y: 1600,
+			},
+			MappingType::Cpi {
+				xy_split: true,
+				x: 800,
+				y: 1600,
+			},
 			MappingType::Media(MediaKey::PlayPause),
 			MappingType::Media(MediaKey::VolumeDown),
 			MappingType::Disable,
 		];
 		for mapping in cases {
 			let (t, v) = mapping.to_bytes();
-			let decoded = MappingType::from_bytes(t, v);
+			let decoded = MappingType::from_bytes(t, &v);
 			assert_eq!(decoded, mapping, "round-trip failed for {mapping:?}");
 		}
 	}
