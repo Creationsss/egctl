@@ -139,6 +139,9 @@ fn cmd_rate(hz: u32) -> Result<()> {
 }
 
 fn cmd_lod(value: u8) -> Result<()> {
+	if !(1..=2).contains(&value) {
+		bail!("invalid lift-off distance {value}. must be 1-2");
+	}
 	modify(|c| c.lod = value)?;
 	println!("Lift-off distance: {value}");
 	Ok(())
