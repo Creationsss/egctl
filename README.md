@@ -49,16 +49,21 @@ egctl ripple off
 egctl motion-sync on
 egctl filter slamclick on
 egctl filter jitter off
-egctl debounce 1 8
-egctl spdt 1 speed
-egctl bind 1 mouse left
-egctl bind 3 media play-pause
-egctl bind 5 key 0x04
-egctl bind 4 cpi-loop
-egctl bind 5 disable
+egctl debounce left 8
+egctl spdt left speed
+egctl bind forward key f5
+egctl bind back media play-pause
+egctl bind middle scroll up
+egctl bind 6 cpi 400
+egctl bind 7 disable
+egctl keys
 egctl reset
 egctl dump
 ```
+
+Buttons are given by name (`left`, `right`, `middle`, `forward`, `back`) or number (1-7).
+Keyboard keys are given by name (`a`, `enter`, `f5`, ... — see `egctl keys`), as a combo
+(`ctrl+c`, `ctrl+shift+esc`), or as a raw HID usage code (`0x14`).
 
 ## License
 

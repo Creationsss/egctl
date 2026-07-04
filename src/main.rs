@@ -10,7 +10,6 @@ use clap::Parser;
 
 use cli::*;
 use device::Device;
-use protocol::BUTTON_COUNT;
 use types::*;
 
 fn main() -> Result<()> {
@@ -46,6 +45,7 @@ fn main() -> Result<()> {
 		Commands::Debounce { button, value } => cmd_debounce(button, value),
 		Commands::Spdt { button, mode } => cmd_spdt(button, mode),
 		Commands::Bind { button, action } => cmd_bind(button, action),
+		Commands::Keys => cmd_keys(),
 		Commands::Reset => cmd_reset(),
 		Commands::Dump => cmd_dump(),
 		Commands::Debug => device::debug_enumerate(),
@@ -57,13 +57,6 @@ fn modify(f: impl FnOnce(&mut MouseConfig)) -> Result<()> {
 	let mut config = dev.read_config()?;
 	f(&mut config);
 	dev.write_config(&config)
-}
-
-fn validate_button(b: u8) -> Result<usize> {
-	if b < 1 || b > BUTTON_COUNT as u8 {
-		bail!("invalid button index {b}. must be 1-{BUTTON_COUNT}");
-	}
-	Ok((b - 1) as usize)
 }
 
 fn cmd_info() -> Result<()> {
@@ -163,33 +156,30 @@ fn cmd_filter(filter: FilterCommand) -> Result<()> {
 	Ok(())
 }
 
-fn cmd_debounce(button: u8, value: u8) -> Result<()> {
-	let idx = validate_button(button)?;
+fn cmd_debounce(button: ButtonArg, value: u8) -> Result<()> {
 	if value > 25 {
 		bail!("invalid debounce value {value}. must be 0-25");
 	}
-	modify(|c| c.buttons[idx].multiclick = value)?;
-	println!("Button {button} debounce: {value}");
+	modify(|c| c.buttons[button.0].multiclick = value)?;
+	println!("Button {} debounce: {value}", button.name());
 	Ok(())
 }
 
-fn cmd_spdt(button: u8, mode: SpdtValue) -> Result<()> {
-	let idx = validate_button(button)?;
-	if idx >= 2 {
-		bail!("SPDT is only available on the left and right buttons (1-2)");
+fn cmd_spdt(button: ButtonArg, mode: SpdtValue) -> Result<()> {
+	if button.0 >= 2 {
+		bail!("SPDT is only available on the left and right buttons");
 	}
 	let spdt = match mode {
 		SpdtValue::Off => SpdtMode::Off,
 		SpdtValue::Safe => SpdtMode::Safe,
 		SpdtValue::Speed => SpdtMode::Speed,
 	};
-	modify(|c| c.buttons[idx].spdt = spdt)?;
-	println!("Button {button} SPDT: {spdt}");
+	modify(|c| c.buttons[button.0].spdt = spdt)?;
+	println!("Button {} SPDT: {spdt}", button.name());
 	Ok(())
 }
 
-fn cmd_bind(button: u8, action: BindAction) -> Result<()> {
-	let idx = validate_button(button)?;
+fn cmd_bind(button: ButtonArg, action: BindAction) -> Result<()> {
 	let mapping = match action {
 		BindAction::Mouse { key } => MappingType::Mouse(match key {
 			MouseKeyArg::Left => MouseKey::Left,
@@ -202,7 +192,10 @@ fn cmd_bind(button: u8, action: BindAction) -> Result<()> {
 			ScrollArg::Up => ScrollDirection::Up,
 			ScrollArg::Down => ScrollDirection::Down,
 		}),
-		BindAction::Key { code } => MappingType::Keyboard(code),
+		BindAction::Key { key } => MappingType::Keyboard {
+			modifiers: key.modifiers,
+			code: key.code,
+		},
 		BindAction::CpiLoop => MappingType::CpiLoop,
 		BindAction::Cpi { dpi } => {
 			let dpi = validate_dpi(dpi)?;
@@ -225,8 +218,24 @@ fn cmd_bind(button: u8, action: BindAction) -> Result<()> {
 		BindAction::Disable => MappingType::Disable,
 	};
 
-	modify(|c| c.buttons[idx].mapping = mapping)?;
-	println!("Button {button}: {mapping}");
+	modify(|c| c.buttons[button.0].mapping = mapping)?;
+	println!("Button {}: {mapping}", button.name());
+	Ok(())
+}
+
+fn cmd_keys() -> Result<()> {
+	let mut out = String::new();
+	for chunk in KEY_NAMES.chunks(4) {
+		for (code, name) in chunk {
+			out.push_str(&format!("{:<22}", format!("{name} (0x{code:02x})")));
+		}
+		out.push('\n');
+	}
+	out.push_str("\nModifiers (combine with '+', e.g. ctrl+c):\n");
+	for (bit, name) in MODIFIER_NAMES {
+		out.push_str(&format!("  {name:<14} (0x{bit:02x})\n"));
+	}
+	io::stdout().write_all(out.as_bytes()).ok();
 	Ok(())
 }
 

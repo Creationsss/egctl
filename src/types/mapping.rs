@@ -125,7 +125,7 @@ impl MediaKey {
 pub enum MappingType {
 	Mouse(MouseKey),
 	Scroll(ScrollDirection),
-	Keyboard(u8),
+	Keyboard { modifiers: u8, code: u8 },
 	CpiLoop,
 	Cpi { xy_split: bool, x: u16, y: u16 },
 	Media(MediaKey),
@@ -140,7 +140,10 @@ impl MappingType {
 				Self::Mouse(key)
 			}
 			MAP_SCROLL => Self::Scroll(ScrollDirection::from_byte(value[0])),
-			MAP_KEYBOARD => Self::Keyboard(value[0]),
+			MAP_KEYBOARD => Self::Keyboard {
+				modifiers: value[0],
+				code: value[1],
+			},
 			MAP_CPI_LOOP => Self::CpiLoop,
 			MAP_CPI => Self::Cpi {
 				xy_split: value[0] != 0,
@@ -166,8 +169,9 @@ impl MappingType {
 				v[0] = d.to_byte();
 				MAP_SCROLL
 			}
-			Self::Keyboard(code) => {
-				v[0] = code;
+			Self::Keyboard { modifiers, code } => {
+				v[0] = modifiers;
+				v[1] = code;
 				MAP_KEYBOARD
 			}
 			Self::CpiLoop => MAP_CPI_LOOP,
@@ -193,7 +197,13 @@ impl fmt::Display for MappingType {
 			Self::Mouse(k) => write!(f, "mouse {}", k.name()),
 			Self::Scroll(ScrollDirection::Up) => write!(f, "scroll up"),
 			Self::Scroll(ScrollDirection::Down) => write!(f, "scroll down"),
-			Self::Keyboard(code) => write!(f, "key 0x{code:02X}"),
+			Self::Keyboard { modifiers, code } => {
+				write!(
+					f,
+					"key {}",
+					crate::types::keys::format_key(*modifiers, *code)
+				)
+			}
 			Self::CpiLoop => write!(f, "CPI cycle"),
 			Self::Cpi {
 				xy_split: true,
@@ -218,7 +228,14 @@ mod tests {
 			MappingType::Mouse(MouseKey::Forward),
 			MappingType::Scroll(ScrollDirection::Up),
 			MappingType::Scroll(ScrollDirection::Down),
-			MappingType::Keyboard(0x04),
+			MappingType::Keyboard {
+				modifiers: 0x00,
+				code: 0x04,
+			},
+			MappingType::Keyboard {
+				modifiers: 0x01,
+				code: 0x06,
+			},
 			MappingType::CpiLoop,
 			MappingType::Cpi {
 				xy_split: false,
