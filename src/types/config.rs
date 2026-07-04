@@ -122,6 +122,8 @@ pub struct MouseConfig {
 	pub angle_snapping: bool,
 	pub ripple_control: bool,
 	pub motion_sync: bool,
+	pub glass_mode: bool,
+	pub force_max_fps: bool,
 	pub cpi_levels: u8,
 	pub cpis: [CpiLevel; CPI_COUNT],
 	pub buttons: [ButtonConfig; BUTTON_COUNT],
@@ -165,6 +167,8 @@ impl MouseConfig {
 			angle_snapping: buf[OFF_ANGLE_SNAPPING] != 0,
 			ripple_control: buf[OFF_RIPPLE_CONTROL] != 0,
 			motion_sync: buf[OFF_MOTION_SYNC] != 0,
+			glass_mode: buf[OFF_GLASS_MODE] != 0,
+			force_max_fps: buf[OFF_FORCE_MAX_FPS] != 0,
 			cpi_levels: buf[OFF_CPI_LEVELS],
 			cpis,
 			buttons,
@@ -189,6 +193,8 @@ impl MouseConfig {
 		buf[OFF_ANGLE_SNAPPING] = self.angle_snapping as u8;
 		buf[OFF_RIPPLE_CONTROL] = self.ripple_control as u8;
 		buf[OFF_MOTION_SYNC] = self.motion_sync as u8;
+		buf[OFF_GLASS_MODE] = self.glass_mode as u8;
+		buf[OFF_FORCE_MAX_FPS] = self.force_max_fps as u8;
 		buf[OFF_CPI_LEVELS] = self.cpi_levels;
 
 		for i in 0..CPI_COUNT {
@@ -223,6 +229,8 @@ impl fmt::Display for MouseConfig {
 		writeln!(f, "Angle snapping:    {}", on_off(self.angle_snapping))?;
 		writeln!(f, "Ripple control:    {}", on_off(self.ripple_control))?;
 		writeln!(f, "Motion sync:       {}", on_off(self.motion_sync))?;
+		writeln!(f, "Glass mode:        {}", on_off(self.glass_mode))?;
+		writeln!(f, "Force max fps:     {}", on_off(self.force_max_fps))?;
 		writeln!(f, "Active CPI levels: {}", self.cpi_levels)?;
 		for (i, cpi) in self.cpis.iter().enumerate() {
 			let active = if (i as u8) < self.cpi_levels {

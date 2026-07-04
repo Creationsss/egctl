@@ -27,6 +27,9 @@ pub const OFF_CPI_LEVELS: usize = 30;
 pub const OFF_CPIS: usize = 51;
 pub const OFF_BUTTONS: usize = 77;
 
+pub const OFF_GLASS_MODE: usize = 127;
+pub const OFF_FORCE_MAX_FPS: usize = 129;
+
 pub const CPI_STRUCT_SIZE: usize = 5;
 pub const BUTTON_STRUCT_SIZE: usize = 7;
 

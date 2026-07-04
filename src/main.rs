@@ -41,6 +41,16 @@ fn main() -> Result<()> {
 			println!("Motion sync: {}", on_off(value.as_bool()));
 			Ok(())
 		}
+		Commands::GlassMode { value } => {
+			modify(|c| c.glass_mode = value.as_bool())?;
+			println!("Glass mode: {}", on_off(value.as_bool()));
+			Ok(())
+		}
+		Commands::MaxFps { value } => {
+			modify(|c| c.force_max_fps = value.as_bool())?;
+			println!("Force max fps: {}", on_off(value.as_bool()));
+			Ok(())
+		}
 		Commands::Filter { filter } => cmd_filter(filter),
 		Commands::Debounce { button, value } => cmd_debounce(button, value),
 		Commands::Spdt { button, mode } => cmd_spdt(button, mode),

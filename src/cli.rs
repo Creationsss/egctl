@@ -76,6 +76,12 @@ pub enum Commands {
 	#[command(about = "Toggle motion sync")]
 	MotionSync { value: OnOff },
 
+	#[command(about = "Toggle sensor glass mode (tracking on glass surfaces)")]
+	GlassMode { value: OnOff },
+
+	#[command(about = "Toggle forcing the sensor to max frame rate (needs mouse firmware 1.07+)")]
+	MaxFps { value: OnOff },
+
 	#[command(about = "Configure filters")]
 	Filter {
 		#[command(subcommand)]
