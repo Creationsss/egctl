@@ -46,11 +46,7 @@ fn main() -> Result<()> {
 			println!("Glass mode: {}", on_off(value.as_bool()));
 			Ok(())
 		}
-		Commands::MaxFps { value } => {
-			modify(|c| c.force_max_fps = value.as_bool())?;
-			println!("Force max fps: {}", on_off(value.as_bool()));
-			Ok(())
-		}
+		Commands::MaxFps { value } => cmd_max_fps(value),
 		Commands::Filter { filter } => cmd_filter(filter),
 		Commands::Debounce { button, value } => cmd_debounce(button, value),
 		Commands::Spdt { button, mode } => cmd_spdt(button, mode),
@@ -147,6 +143,21 @@ fn cmd_lod(value: u8) -> Result<()> {
 	}
 	modify(|c| c.lod = value)?;
 	println!("Lift-off distance: {value}");
+	Ok(())
+}
+
+fn cmd_max_fps(value: OnOff) -> Result<()> {
+	let dev = Device::open()?;
+	let (fw_frac, fw_whole) = dev.get_firmware_version()?;
+	if fw_whole != 0 && (fw_whole, fw_frac) < (1, 7) {
+		eprintln!(
+			"warning: force max fps needs mouse firmware 1.07+ (yours is {fw_whole:x}.{fw_frac:x}); the setting may have no effect"
+		);
+	}
+	let mut config = dev.read_config()?;
+	config.force_max_fps = value.as_bool();
+	dev.write_config(&config)?;
+	println!("Force max fps: {}", on_off(value.as_bool()));
 	Ok(())
 }
 
