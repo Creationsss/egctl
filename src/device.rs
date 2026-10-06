@@ -69,15 +69,10 @@ impl Device {
 	}
 
 	pub fn read_config(&self) -> Result<MouseConfig> {
-		let mut cmd = [0u8; COMMAND_SIZE];
-		let op = OP_LOAD_CONFIG.to_le_bytes();
-		cmd[0] = op[0];
-		cmd[1] = op[1];
-		self.hid.send_feature_report(&cmd)?;
-
 		let mut buf = [0u8; CONFIG_SIZE];
-		buf[0] = REPORT_ID_READ;
-		let n = self.hid.get_feature_report(&mut buf[..CONFIG_SIZE - 3])?;
+		let n = self.query(OP_LOAD_CONFIG, &mut buf[..CONFIG_SIZE - 3], |b| {
+			(1..=CPI_COUNT as u8).contains(&b[OFF_CPI_LEVELS])
+		})?;
 		if n < CONFIG_SIZE - 4 {
 			bail!("config read: expected {} bytes, got {n}", CONFIG_SIZE - 4);
 		}
@@ -105,15 +100,10 @@ impl Device {
 	}
 
 	pub fn get_firmware_version(&self) -> Result<(u8, u8)> {
-		let mut cmd = [0u8; COMMAND_SIZE];
-		let op = OP_GET_FW_VERSION.to_le_bytes();
-		cmd[0] = op[0];
-		cmd[1] = op[1];
-		self.hid.send_feature_report(&cmd)?;
-
 		let mut resp = [0u8; COMMAND_SIZE];
-		resp[0] = REPORT_ID_READ;
-		let n = self.hid.get_feature_report(&mut resp[..COMMAND_SIZE - 1])?;
+		let n = self.query(OP_GET_FW_VERSION, &mut resp[..COMMAND_SIZE - 1], |b| {
+			b[FW_VERSION_MAJOR] != 0 || b[FW_VERSION_MINOR] != 0
+		})?;
 		if n < COMMAND_SIZE - 2 {
 			bail!(
 				"firmware version read: expected {} bytes, got {n}",
@@ -122,6 +112,31 @@ impl Device {
 		}
 
 		Ok((resp[FW_VERSION_MAJOR], resp[FW_VERSION_MINOR]))
+	}
+
+	fn query(&self, op: u16, buf: &mut [u8], valid: impl Fn(&[u8]) -> bool) -> Result<usize> {
+		let mut cmd = [0u8; COMMAND_SIZE];
+		let op = op.to_le_bytes();
+		cmd[0] = op[0];
+		cmd[1] = op[1];
+
+		for _ in 0..QUERY_ATTEMPTS {
+			self.hid.send_feature_report(&cmd)?;
+			thread::sleep(QUERY_DELAY);
+
+			buf.fill(0);
+			buf[0] = REPORT_ID_READ;
+			let n = self.hid.get_feature_report(buf)?;
+			if valid(buf) {
+				return Ok(n);
+			}
+		}
+
+		bail!(
+			"mouse returned an incomplete response after {QUERY_ATTEMPTS} attempts \
+			 (status byte {:#04x}). refusing to continue",
+			buf[1]
+		)
 	}
 
 	pub fn read_raw(&self) -> Result<[u8; CONFIG_SIZE]> {

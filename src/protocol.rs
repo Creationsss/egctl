@@ -14,6 +14,9 @@ pub const OP_GET_FW_VERSION: u16 = 0x02a1;
 
 pub const REPORT_ID_READ: u8 = 0xa1;
 
+pub const QUERY_ATTEMPTS: usize = 5;
+pub const QUERY_DELAY: std::time::Duration = std::time::Duration::from_millis(80);
+
 pub const FILTER_SLAMCLICK: u8 = 0x01;
 pub const FILTER_JITTER: u8 = 0x10;
 
